@@ -1,0 +1,34 @@
+buildscript {
+    repositories {
+        maven {
+            url 'https://plugins.gradle.org/m2/'
+        }
+    }
+
+    dependencies {
+        classpath 'org.javamodularity:moduleplugin:1.8.6'
+        classpath 'org.openjfx:javafx-plugin:0.0.9'
+    }
+}
+
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'application'
+    apply plugin: 'org.javamodularity.moduleplugin'
+    apply plugin: 'org.openjfx.javafxplugin'
+
+    javafx {
+        version = '17-ea+11'
+        modules = [ 'javafx.base',
+            'javafx.graphics',
+            'javafx.controls',
+            'javafx.fxml' ]
+    }
+
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+    }
+}

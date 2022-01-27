@@ -1,0 +1,59 @@
+plugins {
+    id 'application'
+    id 'org.openjfx.javafxplugin' version '0.0.10'
+    id 'org.hidetake.ssh' version '2.10.1'
+}
+
+repositories {
+    mavenCentral()
+}
+
+javafx {
+    modules = [ 'javafx.controls', 'javafx.fxml' ]
+}
+
+mainClassName = "$moduleName/org.modernclients.raspberrypi.MainApp"
+
+def workingDir = '/home/pi/ModernClients/ch12-RaspberryPi/'
+def javaHome = '/usr'
+def javafxHome = '/opt/javafx-sdk-17/lib'
+
+task libs(type: Copy) {
+    dependsOn 'jar'
+    into "${buildDir}/libs/"
+    from configurations.compileClasspath
+}
+
+remotes {
+    pi17 {
+        host = 'raspberrypi.local'
+        user = 'pi'
+        password = 'pi'
+    }
+}
+
+task runRemoteEmbedded {
+    dependsOn 'libs'
+    ssh.settings {
+        knownHosts = allowAnyHosts
+    }
+    doLast {
+        ssh.run {
+            session(remotes.pi17) {
+                execute "mkdir -p ${workingDir}/${project.name}/dist"
+
+                fileTree("${buildDir}/libs")
+                        .filter { it.isFile() && ! it.name.startsWith('javafx')}
+                        .files
+                        .each { put from:it, into: "${workingDir}/${project.name}/dist/${it.name}"}
+
+                executeSudo "-E ${javaHome}/bin/java -Dfile.encoding=UTF-8 " +
+                        "--module-path=${javafxHome}:${workingDir}/${project.name}/dist " +
+                        "-Dmonocle.platform=EGL -Dembedded=monocle -Dglass.platform=Monocle " +
+                        "-Dmonocle.egl.lib=${javafxHome}/libgluon_drm-1.1.6.so " +
+                        "-classpath '${workingDir}/${project.name}/dist/*' " +
+                        "-m ${project.mainClassName}"
+            }
+        }
+    }
+}

@@ -1,0 +1,26 @@
+plugins {
+    id 'application'
+    id 'org.openjfx.javafxplugin' version '0.0.10'
+    id 'com.gluonhq.gluonfx-gradle-plugin' version '1.0.3'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+}
+
+gluonfx {
+    target = 'host'
+    if (project.hasProperty('target')) {
+        target = project.getProperty('target')
+    }
+}
+
+javafx {
+    version = "17-ea+16"
+    modules = [ "javafx.controls" ]
+}
+
+mainClassName = 'hellofx.HelloFX'

@@ -1,0 +1,89 @@
+plugins {
+    id 'application'
+    id 'org.openjfx.javafxplugin' version '0.0.10'
+    id 'org.hidetake.ssh' version '2.10.1'
+}
+
+repositories {
+    mavenCentral()
+    maven {
+        url 'https://nexus.gluonhq.com/nexus/content/repositories/releases/'
+    }
+}
+
+dependencies {
+    implementation 'com.pi4j:pi4j-core:1.4'
+    implementation 'com.gluonhq:maps:2.0.0-ea+4'
+    implementation 'com.gluonhq.attach:storage:4.0.11:desktop'
+    implementation 'com.gluonhq.attach:util:4.0.11'
+    implementation 'com.airhacks:afterburner.fx:1.7.0'
+    implementation 'javax.annotation:javax.annotation-api:1.3.2'
+}
+
+javafx {
+    version = "17-ea+14"
+    modules = [ 'javafx.controls', 'javafx.fxml' ]
+}
+
+mainClassName = "$moduleName/org.modernclients.raspberrypi.gps.MainApp"
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'org.modernclients.raspberrypi.gps.MainApp'
+    }
+}
+
+def workingDir = '/home/pi/ModernClients/ch12-RaspberryPi/Sample7'
+def javaHome = '/usr'
+def javafxHome = '/opt/javafx-sdk-17/lib'
+
+task libs(type: Copy) {
+    dependsOn 'jar'
+    into "${buildDir}/libs/"
+    from configurations.compileClasspath
+}
+
+remotes {
+    pi17 {
+        host = 'raspberrypi.local'
+        user = 'pi'
+        password = 'pi'
+    }
+}
+
+task runRemoteEmbedded {
+    dependsOn 'libs'
+    ssh.settings {
+        knownHosts = allowAnyHosts
+    }
+    doLast {
+        ssh.run {
+            session(remotes.pi17) {
+                execute "mkdir -p ${workingDir}/${project.name}/dist"
+
+                fileTree("${buildDir}/libs")
+                        .filter { it.isFile() && ! it.name.startsWith('javafx')}
+                        .files
+                        .each { put from:it, into: "${workingDir}/${project.name}/dist/${it.name}"}
+
+                executeSudo "-E ${javaHome}/bin/java -Dfile.encoding=UTF-8 " +
+                        "--module-path=${javafxHome}:${workingDir}/${project.name}/dist " +
+                        "-Dmonocle.platform=EGL -Dembedded=monocle -Dglass.platform=Monocle " +
+                        "-Dmonocle.egl.lib=${javafxHome}/libgluon_drm-1.1.6.so " +
+                        "-classpath '${workingDir}/${project.name}/dist/*' " +
+                        "-m ${project.mainClassName}"
+            }
+        }
+    }
+}
+
+// run only on embedded devices
+task runLocalEmbedded(type: Exec) {
+    dependsOn 'libs'
+
+    commandLine 'sudo', "-E", "${javaHome}/bin/java", '-Dfile.encoding=UTF-8',
+            '--module-path', "${javafxHome}/lib:${buildDir}/libs",
+            '-Dmonocle.platform=EGL', '-Dembedded=monocle', '-Dglass.platform=Monocle',
+            "-Dmonocle.egl.lib=${javafxHome}/libgluon_drm-1.1.6.so",
+            '-m', "${project.mainClassName}"
+}

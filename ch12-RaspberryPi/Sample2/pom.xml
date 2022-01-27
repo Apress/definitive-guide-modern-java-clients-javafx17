@@ -1,0 +1,56 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.modernclients.raspberrypi</groupId>
+    <artifactId>hellofx</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.release>11</maven.compiler.release>
+        <javafx.version>17-ea+14</javafx.version>
+        <main.class>org.modernclients.raspberrypi.HelloFX</main.class>
+        <runtime.jvm.options/>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-controls</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
+    </dependencies>
+
+    <profiles>
+        <profile>
+            <id>default</id>
+            <activation><activeByDefault>true</activeByDefault></activation>
+        </profile>
+        <profile>
+            <id>pi</id>
+            <properties>
+                <runtime.jvm.options>-Dmonocle.platform=EGL,-Dembedded=monocle,-Dglass.platform=Monocle,-Dmonocle.egl.lib=/opt/javafx-sdk-17/lib/libgluon_drm-1.1.6.so</runtime.jvm.options>
+            </properties>
+        </profile>
+    </profiles>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.1</version>
+            </plugin>
+            <plugin>
+                <groupId>org.openjfx</groupId>
+                <artifactId>javafx-maven-plugin</artifactId>
+                <version>0.0.6</version>
+                <configuration>
+                    <mainClass>${main.class}</mainClass>
+                    <options>${runtime.jvm.options}</options>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

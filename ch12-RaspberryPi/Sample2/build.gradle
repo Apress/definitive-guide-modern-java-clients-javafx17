@@ -1,0 +1,40 @@
+plugins {
+  id 'application'
+}
+
+repositories {
+    mavenCentral()
+}
+
+def osArch = System.properties['os.arch']
+def version = "17-ea+14"
+def platform = osArch == "arm" ? "linux-arm32-monocle" : "linux-aarch64-monocle"
+
+mainClassName = "org.modernclients.raspberrypi.HelloFX"
+
+dependencies {
+    implementation "org.openjfx:javafx-base:$version:$platform"
+    implementation "org.openjfx:javafx-graphics:$version:$platform"
+    implementation "org.openjfx:javafx-controls:$version:$platform"
+}
+
+compileJava {
+    doFirst {
+        options.compilerArgs = [
+                '--module-path', classpath.filter(j -> j.toString().contains(osArch)).asPath,
+                '--add-modules', 'javafx.controls'
+        ]
+    }
+}
+
+run {
+    doFirst{
+        environment "ENABLE_GLUON_COMMERCIAL_EXTENSIONS", "true"
+        jvmArgs = [
+                '-Dmonocle.platform=EGL', '-Dembedded=monocle', '-Dglass.platform=Monocle',
+                "-Dmonocle.egl.lib=/opt/javafx-sdk-17/lib/libgluon_drm-1.1.6.so",
+                '--module-path', classpath.filter(j -> j.toString().contains(osArch)).asPath,
+                '--add-modules', 'javafx.controls'
+        ]
+    }
+}
